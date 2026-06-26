@@ -1,0 +1,9 @@
+node_modules
+.next
+.eve
+.output
+.workflow-data
+.env.local
+/prisma/*.db
+next-env.d.ts
+*.tsbuildinfo
