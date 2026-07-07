@@ -1,0 +1,24 @@
+# ---- Stage 1: build the fat JAR with Maven (no local Java/Maven needed) ----
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /build
+
+# Cache dependencies first so this layer is reused unless pom.xml changes.
+COPY pom.xml .
+RUN mvn -q -B dependency:go-offline
+
+# Build the application.
+COPY src ./src
+RUN mvn -q -B -DskipTests package
+
+# ---- Stage 2: slim runtime image ----
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+# Exactly one *.jar is produced by spring-boot-maven-plugin (the .jar.original is not matched).
+COPY --from=build /build/target/*.jar /app/app.jar
+
+# Vercel routes container-function traffic to port 80 by default.
+ENV PORT=80
+EXPOSE 80
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
