@@ -1,0 +1,29 @@
+# ---- Stage 1: install dependencies ----
+FROM node:24-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+
+# ---- Stage 2: build the standalone server ----
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# ---- Stage 3: slim runtime (standalone output) ----
+FROM node:24-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+# Vercel routes container-function traffic to port 80 by default.
+ENV PORT=80
+# Bind IPv4 all-interfaces (the JVM POC failed binding IPv6-only).
+ENV HOSTNAME=0.0.0.0
+
+# .next/standalone bundles server.js and the minimal node_modules it needs.
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+
+EXPOSE 80
+CMD ["node", "server.js"]
