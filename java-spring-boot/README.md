@@ -36,8 +36,10 @@ vercel deploy          # preview URL
 vercel deploy --prod   # optional: promote to production
 ```
 
-Vercel auto-detects `Dockerfile.vercel`, builds the image, pushes it to the Vercel Container Registry,
-and routes all traffic to the container. The function scales to zero when idle.
+This folder includes a `vercel.json` that declares the container service (`runtime: container`,
+`entrypoint: Dockerfile.vercel`) and routes all traffic to it. On deploy, Vercel builds the image,
+pushes it to the Vercel Container Registry, and runs it as a container function that scales to zero
+when idle.
 
 ## Quick manual test
 
@@ -45,3 +47,5 @@ and routes all traffic to the container. The function scales to zero when idle.
 curl http://localhost:8080/
 curl -X POST http://localhost:8080/echo -H 'Content-Type: application/json' -d '{"hi":1}'
 ```
+
+Note: `POST /echo` requires a `Content-Type: application/json` header — without it, Spring returns 415.
