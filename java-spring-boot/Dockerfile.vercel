@@ -21,4 +21,11 @@ COPY --from=build /build/target/*.jar /app/app.jar
 ENV PORT=80
 EXPOSE 80
 
+# Hard-cap the JVM heap. Without this, Java auto-sizes its heap from the
+# container's detected memory; if the runtime doesn't convey a memory limit,
+# the JVM over-reserves and is OOM-killed at startup before it can log.
+# JAVA_TOOL_OPTIONS is also echoed to stderr on boot, giving us an early
+# "process started" signal even if something later fails.
+ENV JAVA_TOOL_OPTIONS="-Xmx512m"
+
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
