@@ -21,4 +21,25 @@ COPY --from=build /build/target/*.jar /app/app.jar
 ENV PORT=80
 EXPOSE 80
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# JVM tuning for fast cold start in a constrained container:
+#  -Xmx512m               hard-cap heap (avoid startup OOM if the runtime
+#                         doesn't convey a memory limit to the JVM)
+#  -XX:TieredStopAtLevel=1 stop JIT at C1 — much faster startup
+#  -XX:+UseSerialGC        no parallel-GC init overhead on 1 vCPU / tiny heap
+#  -Xss512k                smaller thread stacks
+#  -Djava.net.preferIPv4Stack=true
+#                         bind the HTTP server on the IPv4 stack (0.0.0.0:80).
+#                         By default the JVM binds the IPv6 wildcard [::]:80 and
+#                         relies on OS dual-stack to also accept IPv4. Vercel's
+#                         container runtime reaches the app over IPv4 without that
+#                         dual-stack mapping, so an IPv6-only listener is
+#                         unreachable and every request fails with
+#                         INTERNAL_FUNCTION_INVOCATION_FAILED. Forcing IPv4 fixes it.
+# JAVA_TOOL_OPTIONS is also echoed to stderr on boot, an early "process started" signal.
+ENV JAVA_TOOL_OPTIONS="-Xmx512m -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xss512k -Djava.net.preferIPv4Stack=true"
+
+# Call java by ABSOLUTE PATH: Vercel's container runtime does not honor the image's
+# ENV PATH, and temurin installs java under /opt/java/openjdk/bin (a non-standard dir),
+# so a bare "java" fails with "java: not found" and the JVM never starts. This was the
+# real cause of the earlier INTERNAL_FUNCTION_INVOCATION_FAILED (no app logs).
+ENTRYPOINT ["/opt/java/openjdk/bin/java", "-jar", "/app/app.jar"]
