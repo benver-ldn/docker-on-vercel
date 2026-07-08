@@ -13,5 +13,9 @@ COPY --from=build /app/Main.class .
 ENV PORT=80
 EXPOSE 80
 
+# Call java by ABSOLUTE PATH. Vercel's container runtime does not honor the
+# image's ENV PATH, and temurin installs java under /opt/java/openjdk/bin
+# (a non-standard dir), so a bare "java" resolves to "java: not found" on
+# Vercel and the JVM never starts. The absolute path removes the PATH dependency.
 # Explicit IPv4 stack, on top of the 0.0.0.0 bind in Main.java.
-CMD ["java", "-Djava.net.preferIPv4Stack=true", "-cp", ".", "Main"]
+CMD ["/opt/java/openjdk/bin/java", "-Djava.net.preferIPv4Stack=true", "-cp", ".", "Main"]
