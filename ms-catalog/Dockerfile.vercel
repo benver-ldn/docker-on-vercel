@@ -18,4 +18,17 @@ EXPOSE 80
 # Call java by ABSOLUTE PATH. Vercel's container runtime does not honor the
 # image's ENV PATH; temurin installs java at /opt/java/openjdk/bin, so a bare
 # "java" resolves to "not found" on Vercel and the JVM never starts.
-CMD ["/opt/java/openjdk/bin/java", "-Djava.net.preferIPv4Stack=true", "-jar", "app.jar"]
+#
+# FAST-START flags: Spring Boot's default ~7-10s cold start exceeds Vercel's
+# container readiness window (every scale-from-zero request 500s). These cut it:
+#   -XX:+UseSerialGC        no parallel-GC thread setup on small heap / low vCPU
+#   -XX:TieredStopAtLevel=1 stop JIT at C1 — far less startup compilation
+#   -Xss512k                smaller thread stacks, cheaper thread creation
+#   lazy-initialization     defer bean creation until first use
+CMD ["/opt/java/openjdk/bin/java", \
+     "-XX:+UseSerialGC", \
+     "-XX:TieredStopAtLevel=1", \
+     "-Xss512k", \
+     "-Dspring.main.lazy-initialization=true", \
+     "-Djava.net.preferIPv4Stack=true", \
+     "-jar", "app.jar"]
