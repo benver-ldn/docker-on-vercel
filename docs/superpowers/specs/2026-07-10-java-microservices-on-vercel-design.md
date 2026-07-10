@@ -73,12 +73,12 @@ one `@RestController` per service, data seeded in-memory at startup (database-pe
 
 | Service   | Owns (in-memory)                                        | Endpoints |
 |-----------|--------------------------------------------------------|-----------|
-| catalog   | ~12–15 products (id, name, category, price, description) | `GET /products?q=&category=` → matching products; `GET /health` |
+| catalog   | 12 products (id, name, category, price, description) | `GET /products?q=&category=` → matching products; `GET /health` |
 | inventory | stock count per product id                              | `GET /stock?ids=1,2,3` → `{ "1": 42, ... }`; `GET /health` |
 | reviews   | avg rating + review count per product id               | `GET /ratings?ids=1,2,3` → `{ "1": {"avg":4.3,"count":128}, ... }`; `GET /health` |
 | gateway   | nothing (stateless aggregator)                         | `GET /api/search?q=&category=` → enriched products; `GET /health` |
 
-**Shared product IDs:** all three data services hardcode the same product ID range (1–15). This is
+**Shared product IDs:** all three data services hardcode the same product ID range (1–12). This is
 the honest microservice reality (each service owns its slice keyed by a shared business id); the
 merge in the gateway joins on `id`.
 
@@ -141,5 +141,5 @@ a heavy unit-test suite.
   Mitigated by generous gateway timeouts; framed as a scale-to-zero talking point.
 - **Manual env wiring** across independent Vercel projects (two-pass deploy). Documented, not
   automated.
-- **Seed drift risk:** the three data services independently hardcode IDs 1–15; they must stay in
+- **Seed drift risk:** the three data services independently hardcode IDs 1–12; they must stay in
   sync. Kept simple deliberately (no shared seed module).
