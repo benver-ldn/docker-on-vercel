@@ -134,8 +134,23 @@ EXPOSE 80
 # Call java by ABSOLUTE PATH. Vercel's container runtime does not honor the
 # image's ENV PATH; temurin installs java at /opt/java/openjdk/bin, so a bare
 # "java" resolves to "not found" on Vercel and the JVM never starts.
-CMD ["/opt/java/openjdk/bin/java", "-Djava.net.preferIPv4Stack=true", "-jar", "app.jar"]
+#
+# FAST-START flags are REQUIRED: default Spring Boot cold start (~7-10s) exceeds
+# Vercel's container readiness window → every scale-from-zero request 500s
+# (INTERNAL_FUNCTION_INVOCATION_FAILED). These cut startup to ~1s locally.
+#   -XX:+UseSerialGC / -XX:TieredStopAtLevel=1 / -Xss512k / lazy-initialization
+CMD ["/opt/java/openjdk/bin/java", \
+     "-XX:+UseSerialGC", \
+     "-XX:TieredStopAtLevel=1", \
+     "-Xss512k", \
+     "-Dspring.main.lazy-initialization=true", \
+     "-Djava.net.preferIPv4Stack=true", \
+     "-jar", "app.jar"]
 ```
+
+> **Deploy-gate lesson (Task 1):** a bare `java -jar` CMD deploys but 500s on every request because
+> the JVM cold start exceeds Vercel's readiness window. The fast-start flags above are what make it
+> serve. All four services MUST use this CMD. See memory `spring-boot-vercel-cold-start`.
 
 **`vercel.json`** (identical for all four):
 
