@@ -1,0 +1,34 @@
+# ---- Stage 1: build fat jar ----
+FROM maven:3-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn -q -B dependency:go-offline
+COPY src ./src
+RUN mvn -q -B clean package -DskipTests
+
+# ---- Stage 2: slim runtime ----
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+
+# Vercel routes container-function traffic to port 80.
+ENV PORT=80
+EXPOSE 80
+
+# Call java by ABSOLUTE PATH. Vercel's container runtime does not honor the
+# image's ENV PATH; temurin installs java at /opt/java/openjdk/bin, so a bare
+# "java" resolves to "not found" on Vercel and the JVM never starts.
+#
+# FAST-START flags: Spring Boot's default ~7-10s cold start exceeds Vercel's
+# container readiness window (every scale-from-zero request 500s). These cut it:
+#   -XX:+UseSerialGC        no parallel-GC thread setup on small heap / low vCPU
+#   -XX:TieredStopAtLevel=1 stop JIT at C1 — far less startup compilation
+#   -Xss512k                smaller thread stacks, cheaper thread creation
+#   lazy-initialization     defer bean creation until first use
+CMD ["/opt/java/openjdk/bin/java", \
+     "-XX:+UseSerialGC", \
+     "-XX:TieredStopAtLevel=1", \
+     "-Xss512k", \
+     "-Dspring.main.lazy-initialization=true", \
+     "-Djava.net.preferIPv4Stack=true", \
+     "-jar", "app.jar"]
