@@ -1,13 +1,6 @@
-type Rating = { avg: number; count: number };
-type Product = {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  description: string;
-  stock: number | null;
-  rating: Rating | null;
-};
+import Link from "next/link";
+import type { Product } from "@/lib/types";
+import { StockBadge, Stars } from "@/app/_components";
 
 const CATEGORIES = ["", "Electronics", "Home", "Sports"];
 
@@ -20,26 +13,6 @@ async function search(q: string, category: string): Promise<Product[]> {
   const res = await fetch(`${base}/api/search?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`gateway responded ${res.status}`);
   return res.json();
-}
-
-function StockBadge({ stock }: { stock: number | null }) {
-  if (stock === null) return <span className="text-xs text-gray-400">stock unavailable</span>;
-  if (stock === 0) return <span className="text-xs font-medium text-red-600">Out of stock</span>;
-  return <span className="text-xs font-medium text-green-600">{stock} in stock</span>;
-}
-
-function Stars({ rating }: { rating: Rating | null }) {
-  if (rating === null) return <span className="text-xs text-gray-400">no rating</span>;
-  const full = Math.round(rating.avg);
-  return (
-    <span className="text-xs text-amber-500">
-      {"★".repeat(full)}
-      <span className="text-gray-300">{"★".repeat(5 - full)}</span>
-      <span className="ml-1 text-gray-500">
-        {rating.avg.toFixed(1)} ({rating.count})
-      </span>
-    </span>
-  );
 }
 
 export default async function Page({
@@ -68,11 +41,13 @@ export default async function Page({
           name="q"
           defaultValue={q}
           placeholder="Search products…"
+          aria-label="Search products"
           className="flex-1 min-w-[240px] rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <select
           name="category"
           defaultValue={category}
+          aria-label="Filter by category"
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
           {CATEGORIES.map((c) => (
@@ -98,7 +73,11 @@ export default async function Page({
       {!error && (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p) => (
-            <article key={p.id} className="rounded-lg border border-gray-200 p-4">
+            <Link
+              key={p.id}
+              href={`/product/${p.id}`}
+              className="block rounded-lg border border-gray-200 p-4 transition hover:border-gray-400 hover:shadow-sm"
+            >
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-medium">{p.name}</h2>
                 <span className="whitespace-nowrap text-sm font-semibold">
@@ -111,7 +90,7 @@ export default async function Page({
                 <StockBadge stock={p.stock} />
                 <Stars rating={p.rating} />
               </div>
-            </article>
+            </Link>
           ))}
           {products.length === 0 && (
             <p className="text-sm text-gray-500">No products found.</p>

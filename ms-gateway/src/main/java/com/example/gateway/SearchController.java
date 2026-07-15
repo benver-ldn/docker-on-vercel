@@ -3,6 +3,8 @@ package com.example.gateway;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -68,6 +70,22 @@ public class SearchController {
                     stock.get(key), ratings.get(key)));
         }
         return out;
+    }
+
+    @GetMapping("/api/product/{id}")
+    public Enriched product(@PathVariable int id) throws Exception {
+        // catalog is REQUIRED — fetch the full list and find the id.
+        String catalogBody = get(catalogUrl + "/products?q=", Duration.ofSeconds(10));
+        List<Product> products = Arrays.asList(mapper.readValue(catalogBody, Product[].class));
+        Product p = products.stream().filter(x -> x.id() == id).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "product " + id + " not found"));
+
+        // inventory + reviews are BEST-EFFORT — null on failure.
+        String key = String.valueOf(id);
+        Integer stock = getStock(key).get(key);
+        Rating rating = getRatings(key).get(key);
+        return new Enriched(p.id(), p.name(), p.category(), p.price(), p.description(), stock, rating);
     }
 
     private Map<String, Integer> getStock(String ids) {

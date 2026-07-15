@@ -9,9 +9,15 @@ independently-deployed **Spring Boot** services — running on **Vercel containe
 | ------- | --- |
 | **Frontend (open this)** | https://ms-web-jade.vercel.app |
 | Gateway API | https://ms-gateway-mu.vercel.app/api/search?q=headphones |
+| Product detail page | https://ms-web-jade.vercel.app/product/1 |
+| Gateway single product | https://ms-gateway-mu.vercel.app/api/product/1 (404 if unknown) |
 | catalog service | https://ms-catalog-seven.vercel.app/products?q=keyboard |
 | inventory service | https://ms-inventory-sand.vercel.app/stock?ids=1,2,3 |
 | reviews service | https://ms-reviews.vercel.app/ratings?ids=1,2,3 |
+
+The search grid shows a skeleton loader (Next.js `loading.tsx` Suspense fallback) during the
+cold-start wait, and each product card links to a single-product detail page
+(`/product/[id]` → gateway `GET /api/product/{id}`).
 
 > All five are public (Deployment Protection disabled) so the demo is clickable. First request after
 > idle is a cold start (~1–3s) — services scale to zero. That's a talking point, not a bug.
