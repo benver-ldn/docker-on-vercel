@@ -28,31 +28,54 @@ export default async function ProductPage({
   if (!error && product === null) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
-      <Link href="/" className="text-sm text-gray-500 hover:text-gray-800">
+    <main className="mx-auto w-full max-w-2xl px-6 py-14 sm:py-20">
+      <Link
+        href="/"
+        className="font-mono text-xs text-ink-3 transition-colors hover:text-accent"
+      >
         ← Back to search
       </Link>
 
       {error && (
-        <p className="mt-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="mt-8 rounded-control border border-warn/30 bg-warn/5 px-4 py-3 text-sm text-warn">
           Failed to load product: {error}
         </p>
       )}
 
       {product && (
-        <article className="mt-6 rounded-lg border border-gray-200 p-6">
-          <p className="text-xs uppercase tracking-wide text-gray-400">{product.category}</p>
-          <div className="mt-1 flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-semibold">{product.name}</h1>
-            <span className="whitespace-nowrap text-xl font-semibold">
+        <article className="mt-8">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-ink-3">
+            {product.category}
+          </p>
+          <div className="mt-3 flex items-start justify-between gap-6">
+            <h1 className="text-display font-semibold leading-[1.05] tracking-tight text-ink [overflow-wrap:anywhere]">
+              {product.name}
+            </h1>
+            <span className="shrink-0 whitespace-nowrap pt-2 font-mono text-lg font-medium text-ink">
               ${product.price.toFixed(2)}
             </span>
           </div>
-          <p className="mt-4 text-sm text-gray-600">{product.description}</p>
-          <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
-            <StockBadge stock={product.stock} />
-            <Stars rating={product.rating} />
-          </div>
+
+          <p className="mt-5 max-w-prose text-[0.95rem] leading-relaxed text-ink-2">
+            {product.description}
+          </p>
+
+          <dl className="mt-8 grid grid-cols-1 divide-y divide-rule overflow-hidden rounded-card border border-rule sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="flex items-center justify-between gap-4 p-4">
+              <dt className="font-mono text-xs uppercase tracking-wider text-ink-3">
+                Availability
+              </dt>
+              <dd>
+                <StockBadge stock={product.stock} />
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-4 p-4">
+              <dt className="font-mono text-xs uppercase tracking-wider text-ink-3">Rating</dt>
+              <dd>
+                <Stars rating={product.rating} />
+              </dd>
+            </div>
+          </dl>
         </article>
       )}
     </main>
